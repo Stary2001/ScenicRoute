@@ -37,7 +37,7 @@ scenic_process* proc_open(u32 pid, int flags)
 
 void proc_close(scenic_process *p)
 {
-	//if(p->frozen) debug_resume(p);
+	if(p->frozen) debug_resume(p);
 	if(p->handle) svcCloseHandle(p->handle);
 	if(p->debug) svcCloseHandle(p->debug);
 	free(p);

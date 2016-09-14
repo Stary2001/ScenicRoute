@@ -2,18 +2,35 @@
 #include <stdio.h>
 #include "proc.h"
 #include "debug.h"
-
-s32 debug_enable_k()
-{
-	__asm__ volatile("cpsid aif"); // Interrupts OFF
-    volatile u8* debug_mode = ((volatile u8*)0xFFF2D00A);
-    *debug_mode = 1;
-    return 0;
-}
+#include "kmem.h"
 
 void debug_enable()
 {
-	svcBackdoor(debug_enable_k);
+	u32 kproc;
+	u32 flags;
+	kmem_copy(&kproc, (void*)0xFFFF9004, 4);
+
+	u32 kflags_offset;
+	bool is_n3ds;
+
+	Result r;
+	if((r = APT_CheckNew3DS(&is_n3ds)) != 0)
+	{
+		return;
+	}
+
+	if(is_n3ds)
+	{
+		kflags_offset = 0xb0;
+	}
+	else
+	{
+		kflags_offset = 0xa8;
+	}
+
+	kmem_copy(&flags, (void*)(kproc + kflags_offset), 4);
+	flags |= 1 << 1; // Force debug.
+	kmem_copy((void*)(kproc + kflags_offset), &flags, 4);
 }
 
 int debug_freeze(scenic_process *p)
@@ -64,7 +81,8 @@ void debug_sink_events(scenic_process *p)
 		}
 		else
 		{
-			printf("type %i\n", info.type);
+			// todo: better handling of debug events..
+			//printf("type %i\n", info.type);
 		}
 		svcContinueDebugEvent(p->debug, 3);
 	}
