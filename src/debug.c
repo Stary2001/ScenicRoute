@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "proc.h"
 #include "debug.h"
-#include "kmem.h"
+#include "kernel/kmem.h"
 
 void debug_enable()
 {

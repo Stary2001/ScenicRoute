@@ -1,6 +1,6 @@
 #include <3ds.h>
 #include <stdio.h>
-#include "kmem.h"
+#include "kernel/kmem.h"
 
 u8 *kcpy_src = NULL;
 u8 *kcpy_dst = NULL;
