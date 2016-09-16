@@ -20,26 +20,61 @@ u32 kthread_prev_offset = 0xa0;
 u32 kthread_next_offset = 0xa4;
 u32 kthread_stolen_list_head_offset = 0xa8;
 
+scenic_kproc *kproc_cache[MAX_PROCS] = {0};
+
 scenic_kproc *kproc_find(u32 pid)
 {
 	if(pid == 0) { return NULL; }
 
-	scenic_kproc *p = malloc(sizeof(scenic_kproc));
-	memset(p, 0, sizeof(scenic_kproc));
+	scenic_kproc *p;
+
+	if(kproc_cache[pid])
+	{
+		return kproc_cache[pid];
+	}
+	else
+	{
+		p = malloc(sizeof(scenic_kproc));
+		memset(p, 0, sizeof(scenic_kproc));
+	}
 
 	if(pid == (u32)-1)
 	{
 		kmem_copy(&p->ptr, (void*)0xFFFF9004, 4);
-		u32 magic;
-		kmem_copy(&magic, p->ptr, 4);
-
 		return p;
 	}
 	else
 	{
-		printf("no kproc searching yet\n");
-		free(p);
-		return NULL;
+		u32 base = 0xfff70000;
+		u32 end = 0xfffb0000; // 1 after the last addr to search
+
+		while(true)
+		{
+			u32 res = kmem_search((void*)base, end-base, kproc_magic);
+			if(res == 0)
+			{
+				break;
+			}
+			else
+			{
+				u32 pid_;
+				kmem_copy(&p->pid, (void*) (res + kproc_pid_offset), 4);
+
+				if(pid == p->pid)
+				{
+					p->ptr = (void*) res;
+
+					if(!kproc_cache[pid])
+					{
+						kproc_cache[pid] = p;
+					}
+					return p;
+				}
+
+				base = res + 4;
+			}
+		}
+
 	}
 
 	free(p);
@@ -83,6 +118,16 @@ scenic_kthread *kthread_search_tab(scenic_kproc *p, void *kptr)
 	return NULL;
 }
 
+scenic_kthread *kthread_create_or_search(scenic_kproc *p, void *kaddr)
+{
+	scenic_kthread *t = kthread_search_tab(p, kaddr);
+	if(!t)
+	{
+		t = p->thread_table[p->used_index++] = kthread_create(p, kaddr);
+	}
+	return t;
+}
+
 scenic_kthread *kthread_prev(scenic_kthread *t)
 {
 	scenic_kproc *p = t->process;
@@ -93,13 +138,7 @@ scenic_kthread *kthread_prev(scenic_kthread *t)
 	kmem_copy(&out, (void*)o, 4);
 	if(out == 0) return NULL;
 
-	scenic_kthread *tt = kthread_search_tab(p, (void*)out);
-	if(!tt)
-	{
-		tt = p->thread_table[p->used_index++] = kthread_create(p, (void*)out);
-	}
-
-	return tt;
+	return kthread_create_or_search(p, (void*)out);
 }
 
 scenic_kthread *kthread_next(scenic_kthread *t)
@@ -112,13 +151,7 @@ scenic_kthread *kthread_next(scenic_kthread *t)
 	printf("thr %08x next = %08x\n", t->ptr, out);
 	if(out == 0) return NULL;
 
-	scenic_kthread *tt = kthread_search_tab(p, (void*)out);
-	if(!tt)
-	{
-		tt = p->thread_table[p->used_index++] = kthread_create(p, (void*)out);
-	}
-
-	return tt;
+	return kthread_create_or_search(p, (void*)out);
 }
 
 scenic_kthread *kproc_get_list_head(scenic_kproc *p)

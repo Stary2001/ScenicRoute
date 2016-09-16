@@ -6,6 +6,11 @@ u8 *kcpy_src = NULL;
 u8 *kcpy_dst = NULL;
 u32 kcpy_sz = 0;
 
+u32 *ksearch_src = NULL;
+u32 ksearch_sz = 0;
+u32 ksearch_magic = 0;
+u32 ksearch_addr = 0;
+
 s32 kmem_copy_k()
 {
 	__asm__ volatile("cpsid aif"); // Interrupts OFF
@@ -25,6 +30,34 @@ void kmem_copy(void *dst, void *src, u32 sz)
 	kcpy_sz = sz;
 
 	svcBackdoor(kmem_copy_k);
+}
+
+s32 kmem_search_k()
+{
+	__asm__ volatile("cpsid aif"); // Interrupts OFF
+
+	while(ksearch_sz != 0)
+	{
+		if(*ksearch_src++ == ksearch_magic)
+		{
+			ksearch_addr = (u32)ksearch_src - 4;
+			return 0;
+		}
+		ksearch_sz--;
+	}
+	ksearch_addr = NULL;
+	return 0;
+}
+
+u32 kmem_search(void *addr, u32 sz, u32 magic)
+{
+	ksearch_src = addr;
+	ksearch_sz = sz / 4;
+	ksearch_magic = magic;
+
+	svcBackdoor(kmem_search_k);
+
+	return ksearch_addr;
 }
 
 void kmem_dump(void *addr, u32 sz)
