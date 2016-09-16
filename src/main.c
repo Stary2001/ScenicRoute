@@ -5,10 +5,12 @@
 #include "kernel/kproc.h"
 #include "kernel/kmem.h"
 
-int spin_pls = 1;
+int spin_pls[3];
 void spin_loop(void *p)
 {
-	while(spin_pls)
+	int i = (int)p;
+
+	while(spin_pls[i])
 	{
 		svcSleepThread(0); // yield
 	}
@@ -21,27 +23,20 @@ int main(int argc, char **argv)
 
 	//debug_enable();
 
-	scenic_kproc *p = kproc_find((u32)-1);
+	scenic_kproc *p = kproc_find(0x10);
 	if(p)
 	{
 		printf("current kproc: %08x %08x\n", p, p->ptr);
-		scenic_kthread *t = kproc_get_main_thread(p);
+		scenic_kthread *t = kproc_get_list_head(p);
 		if(t)
 		{
-			printf("%08x %08x\n", t, t->ptr);
-			kmem_dump(t->ptr, 0xb0);
+			printf("got t, %08x\n", t);
+
+			while(t = kthread_next(t))
+			{
+				printf("got t, %08x\n", t);
+			}
 		}
-		while(!(hidKeysDown() & KEY_A)) hidScanInput();
-
-		Thread spin = threadCreate(spin_loop, NULL, 0x100, 0x30, 0, 1);
-
-		if(t)
-		{
-			printf("%08x %08x\n", t, t->ptr);
-			kmem_dump(t->ptr, 0xb0);
-		}
-
-		spin_pls = 0;
 	}
 
 	/*printf("enabled debug\n");

@@ -1,6 +1,7 @@
 #include <3ds.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "kernel/kproc.h"
 #include "kernel/kmem.h"
 
@@ -14,19 +15,23 @@ u32 kproc_flags_offset = 0xb0;
 u32 kproc_pid_offset = 0xbc;
 u32 kproc_main_thread_offset = 0xc8;
 
-u32 kthread_ctx_offset = 0;
+u32 kthread_ctx_offset = 0x8c;
+u32 kthread_prev_offset = 0xa0;
+u32 kthread_next_offset = 0xa4;
+u32 kthread_stolen_list_head_offset = 0xa8;
 
 scenic_kproc *kproc_find(u32 pid)
 {
 	if(pid == 0) { return NULL; }
 
 	scenic_kproc *p = malloc(sizeof(scenic_kproc));
+	memset(p, 0, sizeof(scenic_kproc));
+
 	if(pid == (u32)-1)
 	{
 		kmem_copy(&p->ptr, (void*)0xFFFF9004, 4);
 		u32 magic;
 		kmem_copy(&magic, p->ptr, 4);
-		printf("ye. %08x\n", magic);
 
 		return p;
 	}
@@ -47,6 +52,7 @@ scenic_kthread *kproc_get_main_thread(scenic_kproc *p)
 	if(p->main_thread) { return p->main_thread; }
 
 	scenic_kthread *t = malloc(sizeof(scenic_kthread));
+	memset(t, 0, sizeof(scenic_kthread));
 	t->process = p;
 	p->main_thread = t;
 
@@ -54,6 +60,89 @@ scenic_kthread *kproc_get_main_thread(scenic_kproc *p)
 	kmem_copy(&p->main_thread->ptr, (void*)o, 4);
 	return p->main_thread;
 }
+
+scenic_kthread *kthread_create(scenic_kproc *p, void *ptr)
+{
+	scenic_kthread *t = malloc(sizeof(scenic_kthread));
+	memset(t, 0, sizeof(scenic_kthread));
+	t->process = p;
+	t->ptr = ptr;
+	return t;
+}
+
+scenic_kthread *kthread_search_tab(scenic_kproc *p, void *kptr)
+{
+	for(int i = 0; i < p->used_index; i++)
+	{
+		if(p->thread_table[i]->ptr == kptr)
+		{
+			return p->thread_table[i];
+		}
+	}
+
+	return NULL;
+}
+
+scenic_kthread *kthread_prev(scenic_kthread *t)
+{
+	scenic_kproc *p = t->process;
+
+	u32 o = (u32)t->ptr + kthread_prev_offset;
+
+	u32 out;
+	kmem_copy(&out, (void*)o, 4);
+	if(out == 0) return NULL;
+
+	scenic_kthread *tt = kthread_search_tab(p, (void*)out);
+	if(!tt)
+	{
+		tt = p->thread_table[p->used_index++] = kthread_create(p, (void*)out);
+	}
+
+	return tt;
+}
+
+scenic_kthread *kthread_next(scenic_kthread *t)
+{
+	scenic_kproc *p = t->process;
+
+	u32 o = (u32)t->ptr + kthread_next_offset;
+	u32 out;
+	kmem_copy(&out, (void*)o, 4);
+	printf("thr %08x next = %08x\n", t->ptr, out);
+	if(out == 0) return NULL;
+
+	scenic_kthread *tt = kthread_search_tab(p, (void*)out);
+	if(!tt)
+	{
+		tt = p->thread_table[p->used_index++] = kthread_create(p, (void*)out);
+	}
+
+	return tt;
+}
+
+scenic_kthread *kproc_get_list_head(scenic_kproc *p)
+{
+	if(!p) { return NULL; }
+	if(!p->main_thread) { kproc_get_main_thread(p); }
+
+	scenic_kthread *t = p->main_thread;
+	u32 o = (u32)t->ptr + kthread_stolen_list_head_offset;
+	u32 out;
+
+	kmem_copy(&out, (void*)o, 4);
+	printf("%08x list head = %08x\n", p, out);
+	if(out == 0) return t; // good enough
+
+	scenic_kthread *tt = kthread_search_tab(p, (void*)out);
+	if(!tt)
+	{
+		tt = p->thread_table[p->used_index++] = kthread_create(p, (void*)out);
+	}
+
+	return tt;
+}
+
 
 int kproc_get_flags(scenic_kproc *p, u32 *out)
 {
