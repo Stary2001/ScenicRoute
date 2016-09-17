@@ -28,7 +28,7 @@ scenic_kproc *kproc_find(u32 pid)
 
 	scenic_kproc *p;
 
-	if(kproc_cache[pid])
+	if(pid != (u32)-1 && kproc_cache[pid])
 	{
 		u32 test;
 		kmem_copy(&test, (void*) (kproc_cache[pid]->pid), 4);
