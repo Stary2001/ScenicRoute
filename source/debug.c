@@ -6,31 +6,11 @@
 
 void debug_enable()
 {
-	u32 kproc;
+	scenic_kproc *p = kproc_find((u32)-1);
 	u32 flags;
-	kmem_copy(&kproc, (void*)0xFFFF9004, 4);
-
-	u32 kflags_offset;
-	bool is_n3ds;
-
-	Result r;
-	if((r = APT_CheckNew3DS(&is_n3ds)) != 0)
-	{
-		return;
-	}
-
-	if(is_n3ds)
-	{
-		kflags_offset = 0xb0;
-	}
-	else
-	{
-		kflags_offset = 0xa8;
-	}
-
-	kmem_copy(&flags, (void*)(kproc + kflags_offset), 4);
+	kproc_get_flags(p, &flags);
 	flags |= 1 << 1; // Force debug.
-	kmem_copy((void*)(kproc + kflags_offset), &flags, 4);
+	kproc_set_flags(p, flags);
 }
 
 int debug_freeze(scenic_process *p)
