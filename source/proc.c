@@ -50,7 +50,7 @@ int proc_debug(scenic_process *p)
 	Result r = 0;
 	if((r = svcDebugActiveProcess(&p->debug, p->pid)) != 0)
 	{
-		printf("svcDebugActiveProcess failed with %08x for %i %08x\n", r, p->pid, &p->debug);
+		printf("svcDebugActiveProcess failed with %08lx for %lu %08lx\n", (u32)r, p->pid, p->debug);
 		return -1;
 	}
 
@@ -97,4 +97,6 @@ bool proc_hook(scenic_process *p, u32 loc, u32 storage, u32 *hook_code, u32 hook
 	{
 		return false;
 	}
+
+	return true;
 }

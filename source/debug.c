@@ -44,7 +44,7 @@ int debug_freeze(scenic_process *p)
 	Result r;
 	if((r = svcBreakDebugProcess(p->debug)) != 0)
 	{
-		printf("svcBreakDebugProcess failed with %08x\n", r);
+		printf("svcBreakDebugProcess failed with %08lx\n", (u32)r);
 		return -1;
 	}
 
@@ -77,7 +77,7 @@ void debug_sink_events(scenic_process *p)
 				// Would block! we are done.
 				break;
 			}
-			printf("svcGetProcessDebugEvent failed with %08x.\n", r);
+			printf("svcGetProcessDebugEvent failed with %08lx.\n", (u32)r);
 		}
 		else
 		{

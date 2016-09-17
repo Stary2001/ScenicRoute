@@ -45,7 +45,7 @@ s32 kmem_search_k()
 		}
 		ksearch_sz--;
 	}
-	ksearch_addr = NULL;
+	ksearch_addr = 0;
 	return 0;
 }
 
@@ -74,7 +74,7 @@ void kmem_dump_off(u32 addr, u32 sz, u32 off)
 
 	for(; addr < orig_addr + sz; addr+=8)
 	{
-		printf("+%04x: ", addr - orig_addr + off);
+		printf("+%04lx: ", addr - orig_addr + off);
 		kmem_copy(&dump, (void*)addr, 8);
 		for(int i = 0; i < 8; i++)
 		{

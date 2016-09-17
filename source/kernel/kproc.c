@@ -30,16 +30,28 @@ scenic_kproc *kproc_find(u32 pid)
 
 	if(kproc_cache[pid])
 	{
-		return kproc_cache[pid];
+		u32 test;
+		kmem_copy(&test, (void*) (kproc_cache[pid]->pid), 4);
+		if(test == kproc_magic)
+		{
+			return kproc_cache[pid];
+		}
+		else
+		{
+			p = kproc_cache[pid];
+			kproc_cache[pid] = NULL;
+		}
 	}
 	else
 	{
 		p = malloc(sizeof(scenic_kproc));
-		memset(p, 0, sizeof(scenic_kproc));
 	}
+
+	memset(p, 0, sizeof(scenic_kproc));
 
 	if(pid == (u32)-1)
 	{
+		svcGetProcessId(&p->pid, 0xffff8001);
 		kmem_copy(&p->ptr, (void*)0xFFFF9004, 4);
 		return p;
 	}
@@ -57,7 +69,6 @@ scenic_kproc *kproc_find(u32 pid)
 			}
 			else
 			{
-				u32 pid_;
 				kmem_copy(&p->pid, (void*) (res + kproc_pid_offset), 4);
 
 				if(pid == p->pid)
@@ -148,7 +159,7 @@ scenic_kthread *kthread_next(scenic_kthread *t)
 	u32 o = (u32)t->ptr + kthread_next_offset;
 	u32 out;
 	kmem_copy(&out, (void*)o, 4);
-	printf("thr %08x next = %08x\n", t->ptr, out);
+	printf("thr %08lx next = %08lx\n", (u32)t->ptr, out);
 	if(out == 0) return NULL;
 
 	return kthread_create_or_search(p, (void*)out);
@@ -164,7 +175,7 @@ scenic_kthread *kproc_get_list_head(scenic_kproc *p)
 	u32 out;
 
 	kmem_copy(&out, (void*)o, 4);
-	printf("%08x list head = %08x\n", p, out);
+	printf("%08lx list head = %08lx\n", (u32)p, (u32)out);
 	if(out == 0) return t; // good enough
 
 	scenic_kthread *tt = kthread_search_tab(p, (void*)out);
