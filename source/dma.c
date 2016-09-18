@@ -57,11 +57,11 @@ s32 kill_cache_k()
 {
 	__asm__ volatile("cpsid aif"); // Interrupts OFF
 	__asm__ volatile("mcr p15, 0, r0, c7, c5, 0"); // icache
-	// __asm__ volatile("mcr p15, 0, r0, c7, c14, 0"); // dcache
+	__asm__ volatile("mcr p15, 0, r0, c7, c14, 0"); // dcache
 	return 0;
 }
 
-void kill_cache()
+void dma_kill_cache()
 {
 	svcBackdoor(kill_cache_k);
 }

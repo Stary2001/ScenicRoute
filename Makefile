@@ -98,7 +98,7 @@ clean:
 #---------------------------------------------------------------------------------
 install: $(BUILD)
 	@cp $(OUTPUT) $(CTRULIB)/lib
-	@cp -r include/ $(CTRULIB)/include/scenic/
+	@cp -RT include/ $(CTRULIB)/include/scenic/
 	@echo "Installed!"
 
 #---------------------------------------------------------------------------------
