@@ -13,6 +13,7 @@ typedef struct scenic_kproc
 {
 	u32 pid;
 	void *ptr;
+	void *codeset_ptr;
 
 	scenic_kthread *main_thread;
 
@@ -25,7 +26,15 @@ struct scenic_kproc_svc
 	char flags[0x10];
 };
 
-scenic_kproc *kproc_find(u32 pid);
+typedef int (*find_cb_t)(u32, void*);
+
+scenic_kproc *kproc_find_by_id(u32 pid);
+scenic_kproc *kproc_find_by_name(char *name);
+scenic_kproc *kproc_find_by_tid(u64 tid);
+
+scenic_kproc *kproc_find(find_cb_t callback, void *dat);
+void kproc_close(scenic_kproc *p);
+
 scenic_kthread *kproc_get_main_thread(scenic_kproc *p);
 scenic_kthread *kproc_get_list_head(scenic_kproc *p);
 

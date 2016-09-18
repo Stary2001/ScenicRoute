@@ -12,6 +12,7 @@ u32 kthread_magic = 0;
 
 u32 kproc_svc_offset = 0x90;
 u32 kproc_flags_offset = 0xb0;
+u32 kproc_codeset_offset = 0xb8;
 u32 kproc_pid_offset = 0xbc;
 u32 kproc_main_thread_offset = 0xc8;
 
@@ -20,17 +21,42 @@ u32 kthread_prev_offset = 0xa0;
 u32 kthread_next_offset = 0xa4;
 u32 kthread_stolen_list_head_offset = 0xa8;
 
+u32 kcodeset_name_offset = 0x50;
+u32 kcodeset_tid_offset = 0x5c;
+
 scenic_kproc *kproc_cache[MAX_PROCS] = {0};
 
-scenic_kproc *kproc_find(u32 pid)
+int id_callback(u32 candidate, void *dat)
 {
-	if(pid == 0) { return NULL; }
+	u32 pid = *(u32*)dat;
+	u32 pid2;
+	kmem_copy(&pid2, (void*)(candidate + kproc_pid_offset), 4);
+	if(pid == pid2)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
 
+scenic_kproc *kproc_find_by_id(u32 pid)
+{
 	scenic_kproc *p;
 
-	if(pid != (u32)-1 && kproc_cache[pid])
+	if(pid == (u32)-1)
 	{
-		u32 test;
+		p = malloc(sizeof(scenic_kproc));
+		svcGetProcessId(&p->pid, 0xffff8001);
+		kmem_copy(&p->ptr, (void*)0xFFFF9004, 4);
+		kmem_copy(&p->codeset_ptr, (void*)((u32)p->ptr + kproc_codeset_offset), 4);
+
+		return p;
+	}
+	else if(kproc_cache[pid])
+	{
+		u32 test; // Make sure it hasn't gone away. unlikely, but still..
 		kmem_copy(&test, (void*) (kproc_cache[pid]->pid), 4);
 		if(test == kproc_magic)
 		{
@@ -38,54 +64,92 @@ scenic_kproc *kproc_find(u32 pid)
 		}
 		else
 		{
-			p = kproc_cache[pid];
+			free(kproc_cache[pid]);
 			kproc_cache[pid] = NULL;
 		}
 	}
+
+	p = kproc_find(id_callback, &pid);
+	kproc_cache[pid] = p;
+	return p;
+}
+
+int name_callback(u32 candidate, void *dat)
+{
+	char buf[8];
+	const char *name = (const char *)dat;
+
+	u32 codeset;
+	kmem_copy(&codeset, (void*)(candidate + kproc_codeset_offset), 4);
+	kmem_copy(buf, (void*)(codeset + kcodeset_name_offset), 8);
+
+	if(strncmp(buf, name, 8) == 0)
+	{
+		return 1;
+	}
 	else
 	{
-		p = malloc(sizeof(scenic_kproc));
+		return 0;
 	}
+}
 
+scenic_kproc *kproc_find_by_name(char *name)
+{
+	return kproc_find(name_callback, name);
+}
+
+int tid_callback(u32 candidate, void *dat)
+{
+	u64 tid = *(u64*)dat;
+	u64 tid2;
+
+	u32 codeset;
+	kmem_copy(&codeset, (void*)(candidate + kproc_codeset_offset), 4);
+	kmem_copy(&tid2, (void*)(codeset + kcodeset_tid_offset), 8);
+
+	if(tid == tid2)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+scenic_kproc *kproc_find_by_tid(u64 tid)
+{
+	return kproc_find(tid_callback, &tid);
+}
+
+scenic_kproc *kproc_find(find_cb_t callback, void *target)
+{
+	scenic_kproc *p = malloc(sizeof(scenic_kproc));
 	memset(p, 0, sizeof(scenic_kproc));
 
-	if(pid == (u32)-1)
-	{
-		svcGetProcessId(&p->pid, 0xffff8001);
-		kmem_copy(&p->ptr, (void*)0xFFFF9004, 4);
-		return p;
-	}
-	else
-	{
-		u32 base = 0xfff70000;
-		u32 end = 0xfffb0000; // 1 after the last addr to search
+	u32 base = 0xfff70000;
+	u32 end = 0xfffb0000; // 1 after the last addr to search
 
-		while(true)
+	while(true)
+	{
+		u32 res = kmem_search((void*)base, end-base, kproc_magic);
+		if(res == 0)
 		{
-			u32 res = kmem_search((void*)base, end-base, kproc_magic);
-			if(res == 0)
-			{
-				break;
-			}
-			else
+			break;
+		}
+		else
+		{
+			if(callback(res, target))
 			{
 				kmem_copy(&p->pid, (void*) (res + kproc_pid_offset), 4);
+				p->ptr = (void*) res;
+				kmem_copy(&p->codeset_ptr, (void*)((u32)p->ptr + kproc_codeset_offset), 4);
 
-				if(pid == p->pid)
-				{
-					p->ptr = (void*) res;
-
-					if(!kproc_cache[pid])
-					{
-						kproc_cache[pid] = p;
-					}
-					return p;
-				}
-
-				base = res + 4;
+				return p;
 			}
-		}
 
+			base = res + 4;
+		}
 	}
 
 	free(p);

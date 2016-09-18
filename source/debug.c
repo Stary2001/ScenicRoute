@@ -6,11 +6,12 @@
 
 void debug_enable()
 {
-	scenic_kproc *p = kproc_find((u32)-1);
+	scenic_kproc *p = kproc_find_by_id((u32)-1);
 	u32 flags;
 	kproc_get_flags(p, &flags);
 	flags |= 1 << 1; // Force debug.
 	kproc_set_flags(p, flags);
+	kproc_close(p);
 }
 
 int debug_freeze(scenic_process *p)
