@@ -16,7 +16,6 @@ typedef struct scenic_kproc
 	void *codeset_ptr;
 
 	scenic_kthread *main_thread;
-
 	scenic_kthread *thread_table[MAX_THREADS];
 	int used_index;
 } scenic_kproc;

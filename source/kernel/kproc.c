@@ -251,7 +251,6 @@ scenic_kthread *kproc_get_list_head(scenic_kproc *p)
 	return tt;
 }
 
-
 int kproc_get_flags(scenic_kproc *p, u32 *out)
 {
 	if(!p || !p->ptr) { return -1; }
@@ -306,4 +305,23 @@ int kthread_set_svc_access(scenic_kthread *t, char *buf)
 	if(!t->ctx_ptr && kthread_get_ctx(t)) { return -1; }
 	// todo: needs ctx
 	return -1;
+}
+
+void kproc_close(scenic_kproc *p)
+{
+	for(int i = 0; i < MAX_THREADS; i++)
+	{
+		if(p->thread_table[i] != NULL)
+		{
+			free(p->thread_table[i]);
+		}
+	}
+
+	if(p->main_thread) free(p->main_thread);
+
+	if(kproc_cache[p->pid] != NULL)
+	{
+		kproc_cache[p->pid] = NULL;
+	}
+	free(p);
 }
