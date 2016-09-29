@@ -1,4 +1,5 @@
 #include <3ds.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -99,4 +100,48 @@ bool proc_hook(scenic_process *p, u32 loc, u32 storage, u32 *hook_code, u32 hook
 	}
 
 	return true;
+}
+
+Result svcGetThreadList(s32* threadCount, u32* threadIds, s32 threadIdMaxCount, Handle domain);
+
+int proc_get_all_threads(scenic_process *p)
+{
+	u32 tids[MAX_THREAD];
+	s32 n_tids = 32;
+
+	Result r = svcGetThreadList(&n_tids, tids, n_tids, p->handle);
+	if(r < 0)
+	{
+		printf("svcGetThreadList failed with %08lx!\n", r);
+		return -1;
+	}
+
+	printf("got %li threads\n", n_tids);
+	p->threads = malloc(n_tids * sizeof(scenic_thread));
+	p->num_threads = n_tids;
+
+	memset(p->threads, 0, n_tids * sizeof(scenic_thread));
+	for(int i = 0; i < n_tids; i++)
+	{
+		p->threads[i].tid = tids[i];
+	}
+
+	return n_tids;
+}
+
+scenic_thread *proc_get_thread(scenic_process *p, int tid)
+{
+	if(!p) return NULL;
+	if(!p->debug) proc_debug(p);
+	if(!p->threads) proc_get_all_threads(p);
+
+	for(int i = 0; i < p->num_threads; i++)
+	{
+		if(p->threads[i].tid == tid)
+		{
+			return &p->threads[i];
+		}
+	}
+
+	return NULL;
 }
