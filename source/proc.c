@@ -124,6 +124,7 @@ int proc_get_all_threads(scenic_process *p)
 	for(int i = 0; i < n_tids; i++)
 	{
 		p->threads[i].tid = tids[i];
+		p->threads[i].proc = p;
 	}
 
 	return n_tids;
@@ -144,4 +145,17 @@ scenic_thread *proc_get_thread(scenic_process *p, int tid)
 	}
 
 	return NULL;
+}
+
+Result svcGetDebugThreadContext(scenic_thread_ctx* context, Handle debug, u32 threadId, u32 controlFlags);
+
+int thread_get_ctx(scenic_thread *t, scenic_thread_ctx *ctx)
+{
+	if(!t || !ctx) { return -1; }
+	Result r = svcGetDebugThreadContext(ctx, t->proc->debug, t->tid, 3); // todo: 3?
+	if(r < 0)
+	{
+		return -1;
+	}
+	return 0;
 }
