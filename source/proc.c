@@ -6,6 +6,7 @@
 #include "proc.h"
 #include "dma.h"
 #include "debug.h"
+#include "custom_svc.h"
 
 scenic_process *current_process;
 
@@ -102,8 +103,6 @@ bool proc_hook(scenic_process *p, u32 loc, u32 storage, u32 *hook_code, u32 hook
 	return true;
 }
 
-Result svcGetThreadList(s32* threadCount, u32* threadIds, s32 threadIdMaxCount, Handle domain);
-
 int proc_get_all_threads(scenic_process *p)
 {
 	u32 tids[MAX_THREAD];
@@ -145,17 +144,4 @@ scenic_thread *proc_get_thread(scenic_process *p, int tid)
 	}
 
 	return NULL;
-}
-
-Result svcGetDebugThreadContext(scenic_thread_ctx* context, Handle debug, u32 threadId, u32 controlFlags);
-
-int thread_get_ctx(scenic_thread *t, scenic_thread_ctx *ctx)
-{
-	if(!t || !ctx) { return -1; }
-	Result r = svcGetDebugThreadContext(ctx, t->proc->debug, t->tid, 3); // todo: 3?
-	if(r < 0)
-	{
-		return -1;
-	}
-	return 0;
 }

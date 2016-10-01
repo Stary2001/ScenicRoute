@@ -3,6 +3,7 @@
 #include "proc.h"
 #include "debug.h"
 #include "kernel/kproc.h"
+#include "custom_svc.h"
 
 void debug_enable()
 {
@@ -67,4 +68,26 @@ void debug_sink_events(scenic_process *p)
 		}
 		svcContinueDebugEvent(p->debug, 3);
 	}
+}
+
+int debug_get_thread_ctx(scenic_thread *t, scenic_debug_thread_ctx *ctx)
+{
+	if(!t || !ctx) { return -1; }
+	Result r = svcGetDebugThreadContext(ctx, t->proc->debug, t->tid, 3); // todo: 3?
+	if(r < 0)
+	{
+		return -1;
+	}
+	return 0;
+}
+
+int debug_set_thread_ctx(scenic_thread *t, scenic_debug_thread_ctx *ctx)
+{
+	if(!t || !ctx) { return -1; }
+	Result r = svcSetDebugThreadContext(ctx, t->proc->debug, t->tid, 1); // todo: 3?
+	if(r < 0)
+	{
+		return -1;
+	}
+	return 0;
 }

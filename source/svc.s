@@ -17,3 +17,7 @@ SVC_BEGIN svcGetThreadList
 SVC_BEGIN svcGetDebugThreadContext
 	svc 0x67
 	bx  lr
+
+SVC_BEGIN svcSetDebugThreadContext
+	svc 0x68
+	bx  lr
