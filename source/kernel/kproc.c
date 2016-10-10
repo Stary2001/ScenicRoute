@@ -5,12 +5,14 @@
 #include "kernel/kproc.h"
 #include "kernel/kmem.h"
 
-u32 kproc_magic = 0xfff2e888;
-u32 kproc_svc_offset = 0x90;
-u32 kproc_flags_offset = 0xb0;
-u32 kproc_codeset_offset = 0xb8;
-u32 kproc_pid_offset = 0xbc;
-u32 kproc_main_thread_offset = 0xc8;
+u32 kproc_magic;
+u32 kproc_svc_offset;
+u32 kproc_flags_offset;
+u32 kproc_codeset_offset;
+u32 kproc_pid_offset;
+u32 kproc_main_thread_offset;
+
+// KThread and KCodeSet are identical for o/n3ds
 
 u32 kthread_magic = 0;
 u32 kthread_ctx_offset = 0x8c;
@@ -23,26 +25,46 @@ u32 kcodeset_tid_offset = 0x5c;
 
 scenic_kproc *kproc_cache[MAX_PROCS] = {0};
 
-int kProcInit(void) {
-    u8 isN3ds;
-    u32 ret;
+int kproc_init(void)
+{
+	bool is_n3ds;
+	Result res;
 
-    ret = aptInit();
-    if(ret != 0) return 1;
-    ret = APT_CheckNew3DS(&isN3ds);
-    if(ret != 0) return 1;
-    aptExit();
+	res = aptInit();
+	if(res != 0)
+	{
+		return -1;
+	}
+
+	res = APT_CheckNew3DS(&is_n3ds);
+	if(res != 0)
+	{
+		aptExit();
+		return -1;
+	}
+
+	aptExit();
 	
-    if(!isN3ds) {
-        kproc_magic = 0xfff2d888;
-        kproc_svc_offset = 0x88;
-        kproc_flags_offset = 0xa8;
-        kproc_codeset_offset = 0xb0;
-        kproc_pid_offset = 0xb4;
-        kproc_main_thread_offset = 0xc0;
-    }
+	if(is_n3ds)
+	{
+		kproc_magic = 0xfff2e888;
+		kproc_svc_offset = 0x90;
+		kproc_flags_offset = 0xb0;
+		kproc_codeset_offset = 0xb8;
+		kproc_pid_offset = 0xbc;
+		kproc_main_thread_offset = 0xc8;
+	}
+	else
+	{
+		kproc_magic = 0xfff2d888;
+		kproc_svc_offset = 0x88;
+		kproc_flags_offset = 0xa8;
+		kproc_codeset_offset = 0xb0;
+		kproc_pid_offset = 0xb4;
+		kproc_main_thread_offset = 0xc0;
+	}
 
-    return 0;
+	return 0;
 }
 
 int id_callback(u32 candidate, void *dat)

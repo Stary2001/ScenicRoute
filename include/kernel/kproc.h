@@ -27,7 +27,7 @@ struct scenic_kproc_svc
 
 typedef int (*find_cb_t)(u32, void*);
 
-int kProcInit(void);
+int kproc_init();
 
 scenic_kproc *kproc_find_by_id(u32 pid);
 scenic_kproc *kproc_find_by_name(char *name);
