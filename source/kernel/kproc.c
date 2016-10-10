@@ -5,17 +5,14 @@
 #include "kernel/kproc.h"
 #include "kernel/kmem.h"
 
-// Set to n3DS values. Init somewhere. :(
-
 u32 kproc_magic = 0xfff2e888;
-u32 kthread_magic = 0;
-
 u32 kproc_svc_offset = 0x90;
 u32 kproc_flags_offset = 0xb0;
 u32 kproc_codeset_offset = 0xb8;
 u32 kproc_pid_offset = 0xbc;
 u32 kproc_main_thread_offset = 0xc8;
 
+u32 kthread_magic = 0;
 u32 kthread_ctx_offset = 0x8c;
 u32 kthread_prev_offset = 0xa0;
 u32 kthread_next_offset = 0xa4;
@@ -25,6 +22,28 @@ u32 kcodeset_name_offset = 0x50;
 u32 kcodeset_tid_offset = 0x5c;
 
 scenic_kproc *kproc_cache[MAX_PROCS] = {0};
+
+int kProcInit(void) {
+    u8 isN3ds;
+    u32 ret;
+
+    ret = aptInit();
+    if(ret != 0) return 1;
+    ret = APT_CheckNew3DS(&isN3ds);
+    if(ret != 0) return 1;
+    aptExit();
+	
+    if(!isN3ds) {
+        kproc_magic = 0xfff2d888;
+        kproc_svc_offset = 0x88;
+        kproc_flags_offset = 0xa8;
+        kproc_codeset_offset = 0xb0;
+        kproc_pid_offset = 0xb4;
+        kproc_main_thread_offset = 0xc0;
+    }
+
+    return 0;
+}
 
 int id_callback(u32 candidate, void *dat)
 {
