@@ -5,16 +5,15 @@
 #include "kernel/kproc.h"
 #include "kernel/kmem.h"
 
-// Set to n3DS values. Init somewhere. :(
 
-u32 kproc_magic = 0xfff2e888;
+u32 kproc_magic = 0xfff2d888; //modified from 0xfff2e888
 u32 kthread_magic = 0;
 
-u32 kproc_svc_offset = 0x90;
-u32 kproc_flags_offset = 0xb0;
-u32 kproc_codeset_offset = 0xb8;
-u32 kproc_pid_offset = 0xbc;
-u32 kproc_main_thread_offset = 0xc8;
+u32 kproc_svc_offset = 0x88; //modified from 0x90
+u32 kproc_flags_offset = 0xa8; //modified from 0xb0
+u32 kproc_codeset_offset = 0xb0; //modified from 0xb8
+u32 kproc_pid_offset = 0xb4; //modified from 0xbc
+u32 kproc_main_thread_offset = 0xc0; //modified from 0xc8
 
 u32 kthread_ctx_offset = 0x8c;
 u32 kthread_prev_offset = 0xa0;
