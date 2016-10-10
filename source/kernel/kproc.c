@@ -5,16 +5,14 @@
 #include "kernel/kproc.h"
 #include "kernel/kmem.h"
 
-
 u32 kproc_magic = 0xfff2e888;
-u32 kthread_magic = 0;
-
 u32 kproc_svc_offset = 0x90;
 u32 kproc_flags_offset = 0xb0;
 u32 kproc_codeset_offset = 0xb8;
 u32 kproc_pid_offset = 0xbc;
 u32 kproc_main_thread_offset = 0xc8;
 
+u32 kthread_magic = 0;
 u32 kthread_ctx_offset = 0x8c;
 u32 kthread_prev_offset = 0xa0;
 u32 kthread_next_offset = 0xa4;
@@ -31,7 +29,7 @@ int kProcInit(void) {
 
     ret = aptInit();
     if(ret != 0) return 1;
-    ret = APT_CheckNew3DS_System(&isN3ds);
+    ret = APT_CheckNew3DS(&isN3ds);
     if(ret != 0) return 1;
     aptExit();
 	
@@ -43,6 +41,7 @@ int kProcInit(void) {
         kproc_pid_offset = 0xb4;
         kproc_main_thread_offset = 0xc0;
     }
+
     return 0;
 }
 
