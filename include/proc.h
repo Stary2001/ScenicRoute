@@ -2,6 +2,11 @@
 #include <stdbool.h>
 #include "thread.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 typedef struct scenic_process
 {
 	u32 pid;
@@ -28,3 +33,7 @@ scenic_thread *proc_get_thread(scenic_process *p, int tid);
 int proc_get_all_threads(scenic_process *p);
 
 extern scenic_process *current_process;
+
+#ifdef __cplusplus
+}
+#endif
