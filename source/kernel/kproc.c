@@ -27,22 +27,22 @@ scenic_kproc *kproc_cache[MAX_PROCS] = {0};
 
 int kProcInit(void) {
     u8 isN3ds;
-	u32 ret;
-	
-	ret = aptInit();
-	if(ret != 0) return 1;
+    u32 ret;
+
+    ret = aptInit();
+    if(ret != 0) return 1;
     ret = APT_CheckNew3DS_System(&isN3ds);
-	if(ret != 0) return 1;
-	aptExit();
+    if(ret != 0) return 1;
+    aptExit();
 	
-	if(!isN3ds) {
-	    kproc_magic = 0xfff2d888;
-		kproc_svc_offset = 0x88;
+    if(!isN3ds) {
+        kproc_magic = 0xfff2d888;
+        kproc_svc_offset = 0x88;
         kproc_flags_offset = 0xa8;
         kproc_codeset_offset = 0xb0;
         kproc_pid_offset = 0xb4;
         kproc_main_thread_offset = 0xc0;
-	}
+    }
     return 0;
 }
 
