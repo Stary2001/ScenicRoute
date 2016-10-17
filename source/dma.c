@@ -15,8 +15,22 @@ u32 dma_copy(scenic_process *dst, void* dst_p, scenic_process *src, void* src_p,
 	Handle hDma;
 
 	ret = svcFlushProcessDataCache(src->handle, src_p, size);
+	if(ret < 0)
+	{
+		return -1;
+	}
+
 	ret = svcFlushProcessDataCache(dst->handle, dst_p, size);
+	if(ret < 0)
+	{
+		return -1;
+	}
+
 	ret = svcStartInterProcessDma(&hDma, dst->handle, dst_p, src->handle, src_p, size, dmaConfig);
+	if(ret < 0)
+	{
+		return -1;
+	}
 	state = 0;
 
 	if (done_state == 0)
@@ -27,7 +41,7 @@ u32 dma_copy(scenic_process *dst, void* dst_p, scenic_process *src, void* src_p,
 		done_state = state;
 	}
 
-	for (i = 0; i < 10000; i++)
+	for (i = 0; i < 1000; i++) 
 	{
 		state = 0;
 		ret = svcGetDmaState(&state, hDma);
@@ -38,16 +52,17 @@ u32 dma_copy(scenic_process *dst, void* dst_p, scenic_process *src, void* src_p,
 		svcSleepThread(1000000);
 	}
 
-	if (i >= 10000)
+	if (i >= 1000)
 	{
-		return 1; // error
+		svcCloseHandle(hDma);
+		return -1; // error
 	}
 
 	svcCloseHandle(hDma);
 	ret = svcInvalidateProcessDataCache(dst->handle, dst_p, size);
-	if (ret != 0)
+	if (ret < 0)
 	{
-		return ret;
+		return -1;
 	}
 
 	return 0;
