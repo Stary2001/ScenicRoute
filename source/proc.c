@@ -42,6 +42,7 @@ void proc_close(scenic_process *p)
 	if(p->frozen) debug_resume(p);
 	if(p->handle) svcCloseHandle(p->handle);
 	if(p->debug) svcCloseHandle(p->debug);
+	if(p->threads) free(p->threads);
 	free(p);
 }
 
