@@ -197,6 +197,13 @@ scenic_kproc *kproc_find(find_cb_t callback, void *target)
 	return NULL;
 }
 
+int kproc_get_name(scenic_kproc *p, char *buf)
+{
+	if(!p) { return -1; }
+	kmem_copy(buf, p->codeset_ptr + kcodeset_name_offset, 8);
+	return 0;
+}
+
 scenic_kthread *kproc_get_main_thread(scenic_kproc *p)
 {
 	if(!p) { return NULL; }

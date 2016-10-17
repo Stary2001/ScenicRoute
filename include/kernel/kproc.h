@@ -32,8 +32,10 @@ int kproc_init();
 scenic_kproc *kproc_find_by_id(u32 pid);
 scenic_kproc *kproc_find_by_name(char *name);
 scenic_kproc *kproc_find_by_tid(u64 tid);
-
 scenic_kproc *kproc_find(find_cb_t callback, void *dat);
+
+int kproc_get_name(scenic_kproc *p, char *buf);
+
 void kproc_close(scenic_kproc *p);
 
 scenic_kthread *kproc_get_main_thread(scenic_kproc *p);
