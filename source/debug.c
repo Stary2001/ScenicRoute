@@ -1,5 +1,6 @@
 #include <3ds.h>
 #include <stdio.h>
+#include "dma.h"
 #include "proc.h"
 #include "debug.h"
 #include "kernel/kproc.h"
@@ -64,7 +65,7 @@ void debug_sink_events(scenic_process *p)
 		else
 		{
 			// todo: better handling of debug events..
-			//printf("type %i\n", info.type);
+			printf("got debug event of type %lx\n", info.type);
 		}
 		svcContinueDebugEvent(p->debug, 3);
 	}

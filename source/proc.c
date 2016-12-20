@@ -79,24 +79,19 @@ u32 branch(u32 base, u32 target)
 
 bool proc_hook(scenic_process *p, u32 loc, u32 storage, u32 *hook_code, u32 hook_len)
 {
-	if(!current_process)
-	{
-		current_process = proc_open((u32)-1, FLAG_NONE);
-	}
-
 	if (dma_protect(p, (void*)(storage & (~0xfff)), 0x1000) != 0)
 	{
 		return false;
 	}
 
-	if (dma_copy(p, (void*)storage, current_process, hook_code, hook_len) != 0)
+	if (dma_copy_from_self(p, (void*)storage, hook_code, hook_len) != 0)
 	{
 		return false;
 	}
 
 	u32 br = branch(loc, storage);
 
-	if (dma_copy(p, (void*)loc, current_process, &br, 4) != 0)
+	if (dma_copy_from_self(p, (void*)loc, &br, 4) != 0)
 	{
 		return false;
 	}

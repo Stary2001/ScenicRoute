@@ -1,12 +1,35 @@
 #include <3ds.h>
 #include "proc.h"
+#include "dma.h"
+
+extern scenic_process *current_process; // defined in proc.c
 
 u32 dma_protect(scenic_process *p, void* addr, u32 size)
 {
 	return svcControlProcessMemory(p->handle, (u32)addr, (u32)addr, size, 6, 7);
 }
 
-u32 dma_copy(scenic_process *dst, void* dst_p, scenic_process *src, void* src_p, u32 size)
+int dma_copy_from_self(scenic_process *dst, void* dst_p, void *src_p, u32 size)
+{
+	if(!current_process)
+	{
+		current_process = proc_open((u32)-1, FLAG_NONE);
+	}
+
+	return dma_copy(dst, dst_p, current_process, src_p, size);
+}
+
+int dma_copy_to_self(void* dst_p, scenic_process *src, void* src_p, u32 size)
+{
+	if(!current_process)
+	{
+		current_process = proc_open((u32)-1, FLAG_NONE);
+	}
+
+	return dma_copy(current_process, dst_p, src, src_p, size);
+}
+
+int dma_copy(scenic_process *dst, void* dst_p, scenic_process *src, void* src_p, u32 size)
 {
 	static u32 done_state = 0;
 
