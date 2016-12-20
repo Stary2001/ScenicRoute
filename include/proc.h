@@ -2,10 +2,15 @@
 #include <stdbool.h>
 #include "thread.h"
 
+typedef struct scenic_process scenic_process;
+#include "debug.h"
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+#define MAX_BREAK 32
 
 typedef struct scenic_process
 {
@@ -16,6 +21,7 @@ typedef struct scenic_process
 
 	u32 num_threads;
 	struct scenic_thread *threads;
+	struct debug_bkpt breakpoints[MAX_BREAK];
 } scenic_process;
 
 #define FLAG_NONE 0

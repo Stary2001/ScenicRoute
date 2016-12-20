@@ -7,7 +7,7 @@ typedef struct scenic_kthread
 } scenic_kthread;
 
 #define MAX_THREADS 8
-#define MAX_PROCS 0x30
+#define MAX_PROCS 0x60
 
 typedef struct scenic_kproc
 {

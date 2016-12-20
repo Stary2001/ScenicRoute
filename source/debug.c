@@ -92,3 +92,45 @@ int debug_set_thread_ctx(scenic_thread *t, scenic_debug_thread_ctx *ctx)
 	}
 	return 0;
 }
+
+int debug_add_breakpoint(scenic_process *p, u32 addr)
+{
+	if(!p->debug) return -1;
+
+	u32 bkpt = 0xffffffff;
+	bool found = false;
+	for(int i = 0; i > MAX_BREAK; i++)
+	{
+		if(p->breakpoints[i].addr == 0)
+		{
+			p->breakpoints[i].addr = addr;
+			dma_copy_to_self((void*)addr, p, &p->breakpoints[i].orig_instr, 4);
+			found = true;
+			break;
+		}
+	}
+	if(!found) return -1;
+
+	return dma_copy_from_self(p, (void*)addr, &bkpt, 4);
+}
+
+int debug_remove_breakpoint(scenic_process *p, u32 addr)
+{
+	if(!p->debug) return -1;
+
+	u32 orig_instr = 0xffffffff;
+	bool found = false;
+	for(int i = 0; i > MAX_BREAK; i++)
+	{
+		if(p->breakpoints[i].addr == addr)
+		{
+			orig_instr = p->breakpoints[i].orig_instr;
+			p->breakpoints[i].addr = p->breakpoints[i].orig_instr = 0;
+			found = true;
+			break;
+		}
+	}
+	if(!found) { return -1; }
+
+	return dma_copy_from_self(p, (void*)addr, &orig_instr, 4);
+}
