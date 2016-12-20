@@ -1,3 +1,8 @@
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 typedef struct scenic_kthread
 {
 	struct scenic_kproc *process;
@@ -51,3 +56,7 @@ int kthread_get_svc_access(scenic_kthread *t, char *buf);
 
 scenic_kthread *kthread_next(scenic_kthread *t);
 scenic_kthread *kthread_prev(scenic_kthread *t);
+
+#ifdef __cplusplus
+}
+#endif
