@@ -4,7 +4,6 @@
 #include "proc.h"
 #include "debug.h"
 #include "kernel/kproc.h"
-#include "custom_svc.h"
 
 void debug_enable()
 {
@@ -58,6 +57,7 @@ void debug_sink_events(scenic_process *p)
 			if(r == 0xd8402009)
 			{
 				// Would block! we are done.
+				printf("Returning...\n");
 				break;
 			}
 			printf("svcGetProcessDebugEvent failed with %08lx.\n", (u32)r);
@@ -65,16 +65,21 @@ void debug_sink_events(scenic_process *p)
 		else
 		{
 			// todo: better handling of debug events..
-			printf("got debug event of type %lx\n", info.type);
+			printf("got debug event of type %x\n", info.type);
+			if(info.type == 4)
+			{
+				printf("got exception of type %x\n", info.exception.type);
+			}
 		}
 		svcContinueDebugEvent(p->debug, 3);
 	}
 }
 
-int debug_get_thread_ctx(scenic_thread *t, scenic_debug_thread_ctx *ctx)
+int debug_get_thread_ctx(scenic_thread *t, ThreadContext *ctx)
 {
 	if(!t || !ctx) { return -1; }
-	Result r = svcGetDebugThreadContext(ctx, t->proc->debug, t->tid, 3); // todo: 3?
+	Result r = svcGetDebugThreadContext(ctx, t->proc->debug, t->tid, 3); // get all 16 regs
+	// todo: floating point registers.
 	if(r < 0)
 	{
 		return -1;
@@ -82,10 +87,10 @@ int debug_get_thread_ctx(scenic_thread *t, scenic_debug_thread_ctx *ctx)
 	return 0;
 }
 
-int debug_set_thread_ctx(scenic_thread *t, scenic_debug_thread_ctx *ctx)
+int debug_set_thread_ctx(scenic_thread *t, ThreadContext *ctx)
 {
 	if(!t || !ctx) { return -1; }
-	Result r = svcSetDebugThreadContext(ctx, t->proc->debug, t->tid, 1); // todo: 3?
+	Result r = svcSetDebugThreadContext(t->proc->debug, t->tid, ctx, 3); // set all 16 regs
 	if(r < 0)
 	{
 		return -1;
@@ -97,7 +102,7 @@ int debug_add_breakpoint(scenic_process *p, u32 addr)
 {
 	if(!p->debug) return -1;
 
-	u32 bkpt = 0xffffffff;
+	u32 bkpt = 0xE1200070; // 'bkpt #0'
 	bool found = false;
 	for(int i = 0; i > MAX_BREAK; i++)
 	{
@@ -109,9 +114,24 @@ int debug_add_breakpoint(scenic_process *p, u32 addr)
 			break;
 		}
 	}
-	if(!found) return -1;
+	if(!found)
+	{
+		printf("could't find a free bkpt slot!\n");
+		return -1;
+	}
 
-	return dma_copy_from_self(p, (void*)addr, &bkpt, 4);
+	if(dma_protect(p, (void*)(addr&~0xfff), 0x1000) < 0)
+	{
+		printf("debug bkpt protect failed! at %08lx\n", addr&~0xfff);
+		return -1;
+	}
+
+	if(dma_copy_from_self(p, (void*)addr, &bkpt, 4) < 0)
+	{
+		printf("debug bkpt copy failed! from %08lx to %08lx\n", (long unsigned int)&bkpt, addr);
+		return -1;
+	}
+	return 0;
 }
 
 int debug_remove_breakpoint(scenic_process *p, u32 addr)

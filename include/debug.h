@@ -5,12 +5,6 @@ extern "C"
 {
 #endif
 
-typedef struct scenic_thread_ctx
-{
-	u32 regs[16];
-	u32 unk[34];
-} scenic_debug_thread_ctx;
-
 typedef enum debug_event_type
 {
 	BREAKPOINT,
@@ -61,8 +55,8 @@ int debug_freeze(scenic_process *p);
 #define debug_thaw debug_resume
 int debug_resume(scenic_process *p);
 
-int debug_get_thread_ctx(scenic_thread *t, scenic_debug_thread_ctx *ctx);
-int debug_set_thread_ctx(scenic_thread *t, scenic_debug_thread_ctx *ctx);
+int debug_get_thread_ctx(scenic_thread *t, ThreadContext *ctx);
+int debug_set_thread_ctx(scenic_thread *t, ThreadContext *ctx);
 
 // Debug events.
 int debug_handle_events(scenic_process *p);

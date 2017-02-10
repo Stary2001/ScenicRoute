@@ -6,7 +6,6 @@
 #include "proc.h"
 #include "dma.h"
 #include "debug.h"
-#include "custom_svc.h"
 
 scenic_process *current_process;
 
