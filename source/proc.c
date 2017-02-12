@@ -90,6 +90,11 @@ bool proc_hook(scenic_process *p, u32 loc, u32 storage, u32 *hook_code, u32 hook
 
 	u32 br = branch(loc, storage);
 
+	if (dma_protect(p, (void*)(loc & (~0xfff)), 0x1000) != 0)
+	{
+		return false;
+	}
+
 	if (dma_copy_from_self(p, (void*)loc, &br, 4) != 0)
 	{
 		return false;
